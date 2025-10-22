@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>绮罗光阴</title>
+
+    <style>
+        /* CSS 开始 */
+
+        /* 基础重置 */
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden;
+            cursor: pointer; 
+        }
+
+        /* 场景和月亮  */
+        #scene {
+            position: relative; width: 100%; height: 100%;
+            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+        }
+        #moon {
+            position: absolute; top: 10%; right: 15%; width: 80px;
+            height: 80px; background: #f0e68c; border-radius: 50%;   
+            box-shadow: 0 0 20px #f0e68c; 
+        }
+        #cliff {
+            position: absolute; bottom: 0; width: 100%; height: 25%;        
+            background: #222; border-radius: 50% 50% 0 0;
+        }
+
+       
+        #characters-sitting {
+            position: absolute; 
+            bottom: 5%; /* 保持在悬崖上 */
+            left: 50%;   
+            transform: translateX(-50%); 
+            
+            width: 350px; /* 【修改】设置你希望的图片宽度 */
+            /* height: auto; (高度会自动缩放) */
+
+            display: block; /* 默认显示 */
+        }
+
+        
+        #characters-pointing {
+            position: absolute; 
+            bottom: 5%; 
+            left: 50%;
+            transform: translateX(-50%);
+            
+            width: 350px; /* 【修改】确保和坐着的图片一样宽 */
+
+            display: none; /* 默认隐藏 */
+        }
+        
+      
+
+        /* 许愿文字  */
+        #wish-text {
+            position: absolute; bottom: 40%; left: 50%;
+            transform: translateX(-50%); 
+            color: #ffffff; font-size: 18px;
+            font-family: 'KaiTi', 'SimSun', serif; 
+            opacity: 0.8;
+            display: none; 
+        }
+
+        /* 星星和流星  */
+        @keyframes twinkle { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+        .star {
+            position: absolute; width: 2px; height: 2px;
+            background: #ffffff; border-radius: 50%;
+            animation: twinkle 5s infinite;
+        }
+        @keyframes shoot-across {
+            0%   { transform: translate(0, 0); opacity: 0; width: 30px; }
+            10%  { opacity: 0.5; }
+            50%  { opacity: 1; width: 200px; }
+            80%  { opacity: 0.5; width: 80px; }
+            100% { transform: translate(150vw, 150vh); opacity: 0; width: 50px; }
+        }
+        #shooting-star {
+            position: absolute; top: 5%; left: -100px; height: 2px;
+            background: linear-gradient(110deg, rgba(255,255,255,0) 0%, #ffffff 80%);
+            border-radius: 50%; opacity: 0; 
+            transform: rotate(25deg); 
+            transform-origin: left center;
+        }
+        #shooting-star.shooting { animation: shoot-across 1.5s ease-in; }
+    </style>
+</head>
+<body>
+
+    <div id="scene" id="scene">
+        
+        <div id="moon"></div>
+        <div id="shooting-star"></div>
+        <div id="cliff"></div>
+        
+        <img id="characters-sitting" src="sitting.png" alt="坐着的人物">
+        <img id="characters-pointing" src="pointing.png" alt="举手的人物">
+        
+        <div id="wish-text">
+            ❤️
+        </div>
+
+    </div>
+    <div id="wish-text">...</div>
+
+    <audio id="bgm" src="your-music.mp3" loop></audio>
+    <script>
+        // 1. 需要控制的所有元素 
+        var scene = document.getElementById("scene");
+        var shootingStar = document.getElementById("shooting-star");
+        var charSitting = document.getElementById("characters-sitting");
+        var charPointing = document.getElementById("characters-pointing");
+        var wishText = document.getElementById("wish-text");
+        var bgm = document.getElementById("bgm");
+        var hasMusicStarted = false; // 用一个变量来标记音乐是否已播放
+        
+        // --- 创建星星代码 ---
+        var starCount = 100; 
+        for (var i = 0; i < starCount; i++) {
+            var star = document.createElement("div");
+            star.className = "star";
+            var x = Math.random() * 100; 
+            var y = Math.random() * 100; 
+            star.style.left = x + "%";
+            star.style.top = y + "%";
+            var delay = Math.random() * 5;
+            star.style.animationDelay = delay + "s";
+            var size = Math.random() * 2 + 1; 
+            star.style.width = size + "px";
+            star.style.height = size + "px";
+            scene.appendChild(star);
+        }
+        // --- 创建星星代码结束 ---
+
+
+        // --- 完整的点击事件 ---
+        scene.addEventListener("click", function() {
+            if (hasMusicStarted == false) {
+                bgm.play(); // 播放 BGM
+                hasMusicStarted = true; // 标记为已播放
+            }
+            // 触发流星 
+            shootingStar.classList.remove("shooting");
+            void shootingStar.offsetWidth;
+            shootingStar.classList.add("shooting");
+            
+            // 触发人物动作 
+            charSitting.style.display = "none";  
+            charPointing.style.display = "block"; 
+            wishText.style.display = "block";
+            
+            // 设置定时器 
+            setTimeout(function() {
+                charSitting.style.display = "block";  
+                charPointing.style.display = "none"; 
+                wishText.style.display = "none";
+            }, 2000); 
+            
+        });
+        
+    </script>
+    
+</body>
+</html>
