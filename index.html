@@ -3,168 +3,429 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>绮罗光阴</title>
+    <title>绮罗光阴 - 灵动星空</title>
 
     <style>
-        /* CSS 开始 */
-
-        /* 基础重置 */
+        /* ================= 基础设置 ================= */
         html, body {
             margin: 0; padding: 0; width: 100%; height: 100%;
             overflow: hidden;
-            cursor: pointer; 
+            background-color: #000;
+            font-family: 'KaiTi', 'SimSun', serif;
+            user-select: none;
         }
 
-        /* 场景和月亮  */
-        #scene {
-            position: relative; width: 100%; height: 100%;
+        .input_video { display: none; }
+
+        /* ================= 场景层 ================= */
+        
+        /* 1. 背景层 */
+        #bg-gradient {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+            z-index: 0;
         }
+
+        /* 2. Three.js 画布 */
+        #canvas-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; 
+            pointer-events: none; 
+        }
+
+        /* 3. 前景物体 */
+        #scene-foreground {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 5; 
+            pointer-events: auto; /* 允许点击 */
+            cursor: pointer;
+        }
+
         #moon {
             position: absolute; top: 10%; right: 15%; width: 80px;
             height: 80px; background: #f0e68c; border-radius: 50%;   
             box-shadow: 0 0 20px #f0e68c; 
         }
+
         #cliff {
             position: absolute; bottom: 0; width: 100%; height: 25%;        
             background: #222; border-radius: 50% 50% 0 0;
+            z-index: 6;
         }
 
-       
-        #characters-sitting {
-            position: absolute; 
-            bottom: 5%; /* 保持在悬崖上 */
-            left: 50%;   
-            transform: translateX(-50%); 
-            
-            width: 350px; /* 【修改】设置你希望的图片宽度 */
-            /* height: auto; (高度会自动缩放) */
-
-            display: block; /* 默认显示 */
-        }
-
-        
-        #characters-pointing {
+        .character-img {
             position: absolute; 
             bottom: 5%; 
-            left: 50%;
-            transform: translateX(-50%);
-            
-            width: 350px; /* 【修改】确保和坐着的图片一样宽 */
-
-            display: none; /* 默认隐藏 */
-        }
-        
-      
-
-        /* 许愿文字  */
-        #wish-text {
-            position: absolute; bottom: 40%; left: 50%;
+            left: 50%;   
             transform: translateX(-50%); 
-            color: #ffffff; font-size: 18px;
-            font-family: 'KaiTi', 'SimSun', serif; 
-            opacity: 0.8;
+            width: 350px; 
+            z-index: 7;
+            transition: opacity 0.3s;
+        }
+        #characters-sitting { display: block; }
+        #characters-pointing { display: none; }
+
+        #wish-text-bubble {
+            position: absolute; bottom: 45%; left: 50%;
+            transform: translateX(-50%); 
+            color: #ffffff; font-size: 24px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.8);
             display: none; 
+            z-index: 8;
+            pointer-events: none;
         }
 
-        /* 星星和流星  */
-        @keyframes twinkle { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
-        .star {
-            position: absolute; width: 2px; height: 2px;
-            background: #ffffff; border-radius: 50%;
-            animation: twinkle 5s infinite;
-        }
+        /* ================= 动画 ================= */
         @keyframes shoot-across {
             0%   { transform: translate(0, 0); opacity: 0; width: 30px; }
-            10%  { opacity: 0.5; }
-            50%  { opacity: 1; width: 200px; }
+            10%  { opacity: 1; }
             80%  { opacity: 0.5; width: 80px; }
             100% { transform: translate(150vw, 150vh); opacity: 0; width: 50px; }
         }
         #shooting-star {
-            position: absolute; top: 5%; left: -100px; height: 2px;
+            position: absolute; top: 5%; left: -100px; height: 3px;
             background: linear-gradient(110deg, rgba(255,255,255,0) 0%, #ffffff 80%);
             border-radius: 50%; opacity: 0; 
             transform: rotate(25deg); 
             transform-origin: left center;
+            z-index: 2; 
+            pointer-events: none;
         }
         #shooting-star.shooting { animation: shoot-across 1.5s ease-in; }
+
+        /* ================= 启动界面 ================= */
+        #loading-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 100;
+            transition: opacity 0.8s;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 15px 30px; font-size: 1rem;
+            border: none; border-radius: 30px;
+            cursor: pointer; 
+            font-family: inherit; font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        /* 主要按钮 */
+        .btn-primary {
+            background: linear-gradient(45deg, #f0e68c, #d4af37);
+            color: #222;
+            box-shadow: 0 0 20px rgba(240, 230, 140, 0.4);
+        }
+        .btn-primary:hover { transform: scale(1.05); }
+
+        /* 次要按钮 */
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid #555;
+            color: #aaa;
+        }
+        .btn-secondary:hover { 
+            border-color: #f0e68c; color: #f0e68c; 
+        }
+
+        .title { color: white; font-size: 2rem; margin-bottom: 10px; text-shadow: 0 0 10px #fff; }
+        .subtitle { color: #888; font-size: 0.9rem; max-width: 400px; text-align: center; line-height: 1.5;}
+
+        #debug-info {
+            position: absolute; top: 10px; left: 10px;
+            color: rgba(255,255,255,0.3); font-size: 12px;
+            z-index: 10; pointer-events: none;
+        }
     </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script type="importmap">
+        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+    </script>
 </head>
 <body>
 
-    <div id="scene" id="scene">
-        
+    <video class="input_video"></video>
+    <div id="bg-gradient"></div>
+    <div id="canvas-container"></div>
+
+    <div id="scene-foreground">
         <div id="moon"></div>
         <div id="shooting-star"></div>
         <div id="cliff"></div>
         
-        <img id="characters-sitting" src="sitting.png" alt="坐着的人物">
-        <img id="characters-pointing" src="pointing.png" alt="举手的人物">
+        <img id="characters-sitting" class="character-img" src="sitting.png" alt="坐着">
+        <img id="characters-pointing" class="character-img" src="pointing.png" alt="指星星">
         
-        <div id="wish-text">
-            ❤️
-        </div>
-
+        <div id="wish-text-bubble">✨ 许愿 ✨</div>
     </div>
-    <div id="wish-text">...</div>
 
-    <audio id="bgm" src="your-music.mp3" loop></audio>
-    <script>
-        // 1. 需要控制的所有元素 
-        var scene = document.getElementById("scene");
-        var shootingStar = document.getElementById("shooting-star");
-        var charSitting = document.getElementById("characters-sitting");
-        var charPointing = document.getElementById("characters-pointing");
-        var wishText = document.getElementById("wish-text");
-        var bgm = document.getElementById("bgm");
-        var hasMusicStarted = false; // 用一个变量来标记音乐是否已播放
+    <div id="loading-screen">
+        <div class="title">绮罗光阴</div>
+        <div class="subtitle">点击屏幕触发流星与许愿<br>开启摄像头可体验手势控制星空</div>
         
-        // --- 创建星星代码 ---
-        var starCount = 100; 
-        for (var i = 0; i < starCount; i++) {
-            var star = document.createElement("div");
-            star.className = "star";
-            var x = Math.random() * 100; 
-            var y = Math.random() * 100; 
-            star.style.left = x + "%";
-            star.style.top = y + "%";
-            var delay = Math.random() * 5;
-            star.style.animationDelay = delay + "s";
-            var size = Math.random() * 2 + 1; 
-            star.style.width = size + "px";
-            star.style.height = size + "px";
-            scene.appendChild(star);
-        }
-        // --- 创建星星代码结束 ---
+        <div class="btn-group">
+            <button id="btn-camera" class="btn-primary">开启摄像头体验</button>
+            <button id="btn-skip" class="btn-secondary">直接进入 (无摄像头)</button>
+        </div>
+    </div>
+    
+    <div id="debug-info"></div>
+    <audio id="bgm" src="your-music.mp3" loop></audio>
 
+    <script type="module">
+        import * as THREE from 'three';
 
-        // --- 完整的点击事件 ---
-        scene.addEventListener("click", function() {
-            if (hasMusicStarted == false) {
-                bgm.play(); // 播放 BGM
-                hasMusicStarted = true; // 标记为已播放
+        // ================= 全局变量 =================
+        let scene, camera, renderer, particleSystem;
+        let gestureProgress = 1.0; // 默认 1.0 (满天星)
+        let isCameraActive = false; // 标记摄像头是否开启
+        
+        const debugInfo = document.getElementById('debug-info');
+        const videoElement = document.querySelector('.input_video');
+        const loadingScreen = document.getElementById('loading-screen');
+        const btnCamera = document.getElementById('btn-camera');
+        const btnSkip = document.getElementById('btn-skip');
+
+        // ================= 1. 场景点击交互 (保持不变) =================
+        const sceneForeground = document.getElementById("scene-foreground");
+        const shootingStar = document.getElementById("shooting-star");
+        const charSitting = document.getElementById("characters-sitting");
+        const charPointing = document.getElementById("characters-pointing");
+        const wishText = document.getElementById("wish-text-bubble");
+        const bgm = document.getElementById("bgm");
+        let hasMusicStarted = false;
+
+        sceneForeground.addEventListener("click", function() {
+            if (!hasMusicStarted) {
+                bgm.play().catch(() => {});
+                hasMusicStarted = true;
             }
-            // 触发流星 
+
+            // 流星
             shootingStar.classList.remove("shooting");
             void shootingStar.offsetWidth;
             shootingStar.classList.add("shooting");
             
-            // 触发人物动作 
+            // 人物
             charSitting.style.display = "none";  
             charPointing.style.display = "block"; 
             wishText.style.display = "block";
             
-            // 设置定时器 
+            // 2秒恢复
             setTimeout(function() {
                 charSitting.style.display = "block";  
                 charPointing.style.display = "none"; 
                 wishText.style.display = "none";
             }, 2000); 
-            
         });
+
+        // ================= 2. Three.js 核心逻辑 =================
+        function initThree() {
+            const container = document.getElementById('canvas-container');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 200;
+
+            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            createHeartParticles();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            animate();
+        }
+
+        function createHeartParticles() {
+            // 使用 Canvas 绘制心形获取坐标
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const size = 256;
+            canvas.width = size; canvas.height = size;
+            
+            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, size, size);
+            ctx.fillStyle = '#fff'; ctx.font = '180px Arial';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText("❤️", size/2, size/2);
+
+            const imgData = ctx.getImageData(0, 0, size, size);
+            const data = imgData.data;
+            const targetPos = [];
+            const randomPos = [];
+            const colors = [];
+
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    if (x % 2 !== 0 || y % 2 !== 0) continue;
+                    const i = (y * size + x) * 4;
+                    if (data[i] > 50) { 
+                        targetPos.push((x - size/2)*1.5, -(y - size/2)*1.5, 0);
+                        randomPos.push(
+                            (Math.random()-0.5)*window.innerWidth*0.8, 
+                            (Math.random()-0.5)*window.innerHeight*0.8, 
+                            (Math.random()-0.5)*600
+                        );
+                        colors.push(1.0, 1.0, 0.9 + Math.random()*0.1); 
+                    }
+                }
+            }
+            // 补点背景星
+            for(let k=0; k<800; k++) {
+                 targetPos.push(0, 0, 0);
+                 randomPos.push(
+                     (Math.random()-0.5)*window.innerWidth,
+                     (Math.random()-0.5)*window.innerHeight,
+                     (Math.random()-0.5)*1000
+                 );
+                 colors.push(1.0, 1.0, 1.0);
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(targetPos, 3));
+            geometry.setAttribute('aTarget', new THREE.Float32BufferAttribute(targetPos, 3));
+            geometry.setAttribute('aRandom', new THREE.Float32BufferAttribute(randomPos, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+            const material = new THREE.ShaderMaterial({
+                vertexShader: `
+                    uniform float uTime;
+                    uniform float uProgress;
+                    uniform float uScale;
+                    attribute vec3 aTarget;
+                    attribute vec3 aRandom;
+                    attribute vec3 color;
+                    varying vec3 vColor;
+                    void main() {
+                        vColor = color;
+                        vec3 pos = mix(aTarget, aRandom, uProgress);
+                        pos.z += sin(uTime * 3.0 + pos.x) * 2.0; // 闪烁位移
+                        vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                        gl_PointSize = uScale * (150.0 / -mvPosition.z);
+                        gl_Position = projectionMatrix * mvPosition;
+                    }
+                `,
+                fragmentShader: `
+                    varying vec3 vColor;
+                    void main() {
+                        float r = distance(gl_PointCoord, vec2(0.5));
+                        if (r > 0.5) discard;
+                        float alpha = 1.0 - (r * 2.0);
+                        alpha = pow(alpha, 2.0);
+                        gl_FragColor = vec4(vColor, alpha);
+                    }
+                `,
+                uniforms: {
+                    uTime: { value: 0 },
+                    uProgress: { value: 1.0 },
+                    uScale: { value: 6.0 }
+                },
+                transparent: true,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
+            });
+
+            particleSystem = new THREE.Points(geometry, material);
+            scene.add(particleSystem);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (particleSystem) {
+                particleSystem.material.uniforms.uTime.value += 0.01;
+                particleSystem.material.uniforms.uProgress.value = gestureProgress;
+                
+                // 如果没有开启摄像头，让星星缓慢自动旋转，增加一点动感
+                if (!isCameraActive) {
+                     particleSystem.rotation.y += 0.0005; 
+                }
+            }
+            renderer.render(scene, camera);
+        }
+
+        // ================= 3. 摄像头与手势逻辑 =================
+        function startCameraMode() {
+            btnCamera.innerText = "启动中...";
+            btnCamera.disabled = true;
+            btnSkip.style.display = 'none';
+
+            const hands = new Hands({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+            });
+            hands.setOptions({
+                maxNumHands: 1,
+                modelComplexity: 1,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+
+            hands.onResults((results) => {
+                if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                    const lm = results.multiHandLandmarks[0];
+                    const d = Math.sqrt(Math.pow(lm[4].x - lm[8].x, 2) + Math.pow(lm[4].y - lm[8].y, 2));
+                    let t = (d - 0.05) / (0.2 - 0.05);
+                    t = Math.max(0, Math.min(1, t));
+                    gestureProgress += (t - gestureProgress) * 0.1;
+                    debugInfo.innerText = `手势控制中: ${t < 0.3 ? "聚合" : "散开"}`;
+                } else {
+                    gestureProgress += (1.0 - gestureProgress) * 0.05;
+                }
+            });
+
+            const cameraUtils = new Camera(videoElement, {
+                onFrame: async () => { await hands.send({image: videoElement}); },
+                width: 640, height: 480
+            });
+            
+            cameraUtils.start()
+                .then(() => {
+                    isCameraActive = true;
+                    enterScene();
+                })
+                .catch(err => {
+                    alert("无法启动摄像头，将切换至浏览模式");
+                    enterScene();
+                });
+        }
+
+        // ================= 4. 界面流程控制 =================
         
+        function enterScene() {
+            loadingScreen.style.opacity = 0;
+            setTimeout(() => {
+                loadingScreen.style.display = 'none';
+            }, 800);
+        }
+
+        // 按钮A: 开启摄像头
+        btnCamera.addEventListener('click', () => {
+            initThree(); // 先初始化 3D
+            startCameraMode(); // 再尝试启动摄像头
+        });
+
+        // 按钮B: 直接进入
+        btnSkip.addEventListener('click', () => {
+            initThree(); // 初始化 3D
+            isCameraActive = false; // 标记无摄像头
+            debugInfo.innerText = "浏览模式 (无摄像头)";
+            enterScene();
+        });
+
     </script>
-    
 </body>
 </html>
